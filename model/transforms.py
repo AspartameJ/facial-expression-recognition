@@ -4,19 +4,18 @@ import numbers
 import types
 
 import numpy as np
-import torch
 from PIL import Image
 
 
-def to_tensor(pic):
+def to_ndarray(pic):
 
     # handle PIL Image
     if pic.mode == 'I':
-        img = torch.from_numpy(np.array(pic, np.int32, copy=False))
+        img = np.array(pic, np.int32, copy=False)
     elif pic.mode == 'I;16':
-        img = torch.from_numpy(np.array(pic, np.int16, copy=False))
+        img = np.array(pic, np.int16, copy=False)
     else:
-        img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
+        img = np.array(pic, copy=False) 
     # PIL image mode: 1, L, P, I, F, RGB, YCbCr, RGBA, CMYK
     if pic.mode == 'YCbCr':
         nchannel = 3
@@ -24,12 +23,12 @@ def to_tensor(pic):
         nchannel = 1
     else:
         nchannel = len(pic.mode)
-    img = img.view(pic.size[1], pic.size[0], nchannel)
+    img = img.reshape(pic.size[1], pic.size[0], nchannel)
     # put it from HWC to CHW format
     # yikes, this transpose takes 80% of the loading time/CPU
-    img = img.transpose(0, 1).transpose(0, 2).contiguous()
-    if isinstance(img, torch.ByteTensor):
-        return img.float().div(255)
+    img = img.transpose(2, 0, 1)
+    if isinstance(img, np.ndarray):
+        return img.astype("float32")/255
     else:
         return img
 
@@ -102,10 +101,10 @@ class Compose(object):
         return img
 
 
-class ToTensor(object):
+class ToNdarray(object):
 
     def __call__(self, pic):
-        return to_tensor(pic)
+        return to_ndarray(pic)
 
 
 class Lambda(object):
@@ -116,3 +115,4 @@ class Lambda(object):
 
     def __call__(self, img):
         return self.lambd(img)
+

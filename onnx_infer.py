@@ -21,10 +21,9 @@ def softmax(x):
 def test_onnx():
     transform_test = transforms.Compose([
                 transforms.TenCrop(44),
-                transforms.Lambda(lambda crops: torch.stack(
-                    [transforms.ToTensor()(crop) for crop in crops])),
+                transforms.Lambda(lambda crops: [transforms.ToNdarray()(crop) for crop in crops])
             ])
-    img_paths = ["./imgs/1.jpg", "./imgs/2.jpg"]
+    img_paths = ["./imgs/1.jpg","./imgs/2.jpg"]
 
     sess = rt.InferenceSession("./model/vgg19.onnx", providers=['CPUExecutionProvider'])
 
@@ -50,7 +49,6 @@ def test_onnx():
         img = Image.fromarray(np.uint8(img))
         inputs = transform_test(img)
 
-        inputs = inputs.numpy()
         outputs = sess.run([out_name], {input_name:inputs})
         outputs_avg = outputs[0].mean(0)    # avg over crops
 
