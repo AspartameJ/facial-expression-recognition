@@ -17,7 +17,7 @@ def softmax(x):
 def test_onnx():
     transform_test = transforms.Compose([
                 transforms.TenCrop(44),
-                transforms.Lambda(lambda crops: [transforms.ToNdarray()(crop) for crop in crops])
+                transforms.Lambda(lambda crops: np.stack([transforms.ToNdarray()(crop) for crop in crops]))
             ])
     img_paths = ["./imgs/1.jpg","./imgs/2.jpg"]
 
