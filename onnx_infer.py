@@ -1,10 +1,6 @@
 import sys
 sys.path.append("./")
-import torch
 import onnxruntime as rt
-import torch.onnx
-from torch.autograd import Variable
-import torch.nn.functional as F
 import cv2
 import numpy as np
 from PIL import Image
