@@ -2,7 +2,6 @@ import sys
 sys.path.append("./")
 import cv2
 import numpy as np
-from PIL import Image
 from model import transforms
 from ais_bench.infer.interface import InferSession
 
@@ -41,9 +40,7 @@ def test_om():
         img = img[:, :, np.newaxis]
         img = np.concatenate((img, img, img), axis=2)
 
-        img = Image.fromarray(np.uint8(img))
         inputs = transform_test(img)
-        print(type(inputs),inputs.shape)
         outputs = sess.infer([inputs])
         outputs_avg = outputs[0].mean(0)    # avg over crops
 

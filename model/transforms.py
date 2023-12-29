@@ -4,27 +4,11 @@ import numbers
 import types
 
 import numpy as np
-from PIL import Image
+import cv2
 
 
-def to_ndarray(pic):
-    # handle PIL Image
-    if pic.mode == 'I':
-        img = np.array(pic, np.int32, copy=False)
-    elif pic.mode == 'I;16':
-        img = np.array(pic, np.int16, copy=False)
-    else:
-        img = np.array(pic, copy=False) 
-    # PIL image mode: 1, L, P, I, F, RGB, YCbCr, RGBA, CMYK
-    if pic.mode == 'YCbCr':
-        nchannel = 3
-    elif pic.mode == 'I;16':
-        nchannel = 1
-    else:
-        nchannel = len(pic.mode)
-    img = img.reshape(pic.size[1], pic.size[0], nchannel)
+def to_ndarray(img):
     # put it from HWC to CHW format
-    # yikes, this transpose takes 80% of the loading time/CPU
     img = img.transpose(2, 0, 1)
     if isinstance(img, np.ndarray):
         return img.astype("float32")/255
@@ -35,11 +19,11 @@ def to_ndarray(pic):
 def center_crop(img, output_size):
     if isinstance(output_size, numbers.Number):
         output_size = (int(output_size), int(output_size))
-    w, h = img.size
+    h, w = img.shape[:2]
     th, tw = output_size
     i = int(round((h - th) / 2.))
     j = int(round((w - tw) / 2.))
-    return img.crop((j, i, j + tw, i + th))
+    return img[i:i+th, j:j+tw]
 
 
 def five_crop(img, size):
@@ -49,16 +33,16 @@ def five_crop(img, size):
         assert len(
             size) == 2, 'Please provide only two dimensions (h, w) for size.'
 
-    w, h = img.size
+    h, w = img.shape[:2]
     crop_h, crop_w = size
     if crop_w > w or crop_h > h:
         raise ValueError(
             'Requested crop size {} is bigger than input size {}'.format(
                 size, (h, w)))
-    tl = img.crop((0, 0, crop_w, crop_h))
-    tr = img.crop((w - crop_w, 0, w, crop_h))
-    bl = img.crop((0, h - crop_h, crop_w, h))
-    br = img.crop((w - crop_w, h - crop_h, w, h))
+    tl = img[0:crop_h, 0:crop_w]
+    tr = img[0:crop_h, w-crop_w:w]
+    bl = img[h-crop_h:h, 0:crop_w]
+    br = img[h-crop_h:h, w-crop_w:w]
     center = center_crop(img, (crop_h, crop_w))
     return (tl, tr, bl, br, center)
 
@@ -80,9 +64,9 @@ class TenCrop(object):
         first_five = five_crop(img, self.size)
 
         if self.vertical_flip:
-            img = img.transpose(Image.FLIP_TOP_BOTTOM)
+            img = cv2.flip(img, 0)  # flip vertically
         else:
-            img = img.transpose(Image.FLIP_LEFT_RIGHT)
+            img = cv2.flip(img, 1)  # flip horizontally
 
         second_five = five_crop(img, self.size)
 

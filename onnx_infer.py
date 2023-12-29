@@ -3,7 +3,6 @@ sys.path.append("./")
 import onnxruntime as rt
 import cv2
 import numpy as np
-from PIL import Image
 from model import transforms
 
 
@@ -42,9 +41,7 @@ def test_onnx():
         img = img[:, :, np.newaxis]
         img = np.concatenate((img, img, img), axis=2)
 
-        img = Image.fromarray(np.uint8(img))
         inputs = transform_test(img)
-        print(type(inputs), inputs.shape)
         outputs = sess.run([out_name], {input_name:inputs})
         outputs_avg = outputs[0].mean(0)    # avg over crops
 
