@@ -8,7 +8,6 @@ from PIL import Image
 
 
 def to_ndarray(pic):
-
     # handle PIL Image
     if pic.mode == 'I':
         img = np.array(pic, np.int32, copy=False)

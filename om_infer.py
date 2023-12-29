@@ -1,11 +1,10 @@
 import sys
 sys.path.append("./")
-import onnxruntime as rt
 import cv2
 import numpy as np
 from PIL import Image
 from model import transforms
-
+from ais_bench.infer.interface import InferSession
 
 def softmax(x):
     if len(x.shape) > 1:
@@ -14,14 +13,14 @@ def softmax(x):
         x = np.exp(x) / np.sum(np.exp(x))
     return x
 
-def test_onnx():
+def test_om():
     transform_test = transforms.Compose([
                 transforms.TenCrop(44),
                 transforms.Lambda(lambda crops: np.stack([transforms.ToNdarray()(crop) for crop in crops]))
             ])
     img_paths = ["./imgs/1.jpg","./imgs/2.jpg","./imgs/3.png"]
-
-    sess = rt.InferenceSession("./model/vgg19.onnx", providers=['CPUExecutionProvider'])
+    device_id = 0
+    sess = InferSession(device_id, "./model/vgg19_force_fp16.om")
 
     input_name = sess.get_inputs()[0].name
     out_name = sess.get_outputs()[0].name
@@ -44,8 +43,8 @@ def test_onnx():
 
         img = Image.fromarray(np.uint8(img))
         inputs = transform_test(img)
-        print(type(inputs), inputs.shape)
-        outputs = sess.run([out_name], {input_name:inputs})
+        print(type(inputs),inputs.shape)
+        outputs = sess.infer([inputs])
         outputs_avg = outputs[0].mean(0)    # avg over crops
 
         score = softmax(outputs_avg)
@@ -53,5 +52,5 @@ def test_onnx():
         print(predicted, score)
 
 if __name__ == '__main__':
-    test_onnx()
+    test_om()
 
