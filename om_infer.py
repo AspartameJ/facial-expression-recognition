@@ -5,6 +5,9 @@ import numpy as np
 from model import transforms
 from ais_bench.infer.interface import InferSession
 
+
+emotions = ["angry", "disgusted", "scared", "happy", "sad", "surprised", "neutral"]
+
 def softmax(x):
     if len(x.shape) > 1:
         x = np.exp(x) / np.sum(np.exp(x),axis=1).reshape(-1,1)
@@ -46,7 +49,7 @@ def test_om():
 
         score = softmax(outputs_avg)
         predicted = np.argmax(outputs_avg)
-        print(predicted, score)
+        print(emotions[predicted], score)
 
 if __name__ == '__main__':
     test_om()
