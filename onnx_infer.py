@@ -15,6 +15,29 @@ def softmax(x):
         x = np.exp(x) / np.sum(np.exp(x))
     return x
 
+def infer(cv_img, session):
+    input_name = session.get_inputs()[0].name
+    out_name = session.get_outputs()[0].name
+    # preprocess
+    transform_test = transforms.Compose([
+                transforms.TenCrop(44),
+                transforms.Lambda(lambda crops: np.stack([transforms.ToNdarray()(crop) for crop in crops]))
+            ])
+    img = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
+    img = cv2.resize(img, (48, 48))
+    img = img[:, :, np.newaxis]
+    img = np.concatenate((img, img, img), axis=2)
+    inputs = transform_test(img)
+    # run model
+    outputs = session.run([out_name], {input_name:inputs})
+    outputs_avg = outputs[0].mean(0)    # avg over crops
+    # print result
+    score = softmax(outputs_avg)
+    predicted = np.argmax(outputs_avg)
+    print(emotions[predicted], score)
+
+    return emotions[predicted], score
+
 def test_onnx():
     transform_test = transforms.Compose([
                 transforms.TenCrop(44),
@@ -52,5 +75,20 @@ def test_onnx():
         print(emotions[predicted], score)
 
 if __name__ == '__main__':
-    test_onnx()
+    sess = rt.InferenceSession("./model/vgg19.onnx", providers=['CPUExecutionProvider'])
+    video = cv2.VideoCapture(0)
+    fps = video.get(cv2.CAP_PROP_FPS)
+    print(fps)
+    size = (int(video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(video.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+    print(size)
+    while True:
+        ret, frame = video.read()
+        result, scores = infer(frame, sess)
+        cv2.putText(frame, result, (0,40), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 1)
+        cv2.imshow("A video", frame)
+        c = cv2.waitKey(100)
+        if c == 27:
+            break
+    video.release()
+    cv2.destroyAllWindows()
 
