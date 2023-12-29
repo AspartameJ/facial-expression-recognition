@@ -19,7 +19,7 @@ def test_onnx():
                 transforms.TenCrop(44),
                 transforms.Lambda(lambda crops: np.stack([transforms.ToNdarray()(crop) for crop in crops]))
             ])
-    img_paths = ["./imgs/1.jpg","./imgs/2.jpg","./imgs/3.png"]
+    img_paths = ["./imgs/1.jpg","./imgs/2.jpg"]
 
     sess = rt.InferenceSession("./model/vgg19.onnx", providers=['CPUExecutionProvider'])
 
